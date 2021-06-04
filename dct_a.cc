@@ -1,5 +1,6 @@
 // https://unix4lyfe.org/dct-1d/
-// gcc -S -O3 -march=core-avx-i -masm=intel dct_b.cc
+// gcc -S -O3 -march=core-avx-i -masm=intel dct_a.cc
+// gcc -S -O3 -march=core-avx-i -ffast-math -masm=intel dct_a.cc
 // awk '{print $1}' < dct_b.s | grep 'v....d' | sort | uniq -c
 #include <cmath>
 

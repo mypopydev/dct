@@ -1,5 +1,8 @@
 // https://unix4lyfe.org/dct-1d/
-#include <cmath>
+// gcc -S -O3 -march=core-avx-i -masm=intel dct_b.cc
+// gcc -S -O3 -march=core-avx-i -ffast-math -masm=intel dct_b.cc
+// awk '{print $1}' < dct_b.s | grep 'v....d' | sort | uniq -c
+#include <math.h>
 
 void dct_ii_8(const double x[8], double X[8]) {
   for (int k = 0; k < 8; ++k) {
