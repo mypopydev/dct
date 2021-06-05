@@ -1,0 +1,18 @@
+     Here is the implementation of a new fast DCT algorithm raised by Xinjian Chen,
+in both c and assembly(now HLA/MMX) for 2 dimension case. Coded by Dan Shu. Note that 
+the c and mmx implementation environments are different. The latter needs to be as parallel
+as possible.
+     Also the paper of Xinjian Chen, which is published on IEEE signal processing transaction,
+is attached, and docs are in tex format and being output now as post-script format. Please 
+refer to them.
+     It's near two years later for its release, for being busy or misfortune. Life is life.
+     The code work is tedious but I feel proud for implementing such a bright idea of Xinjian 
+Chen's. All attributes to him. I cannot imagine how to fulfil those theoretical deduction, 
+though I verify it with my code! So don't ask me for help on the principle of the theorem. 
+I cannot afford that.
+                                               Author Dan Shu
+                                               <steade@163.net>
+                                               
+Note: The HLA(High Level Assembly, thanks for Randall Hyde's generous contribution) is distributed
+in public domain, though it is not of GPL. However, I would like to put my MMX code using HLA
+under GPL which is my favorite, same as the c code.

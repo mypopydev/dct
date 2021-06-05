@@ -1,0 +1,966 @@
+/*
+	dctmmx.hla - fast dct by Xinjian Chen,implemented by DanShu in mmx/HLA.
+	Copyright (C) 2004 Xinjian Chen and DanShu
+        for help please send mail to <steade@163.net>
+        
+        Special thanks for Randall Hyde who generously allows the using of HLA. 
+	
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+ 
+*/
+
+program FastDct;      
+#include( "stdlib.hhf" )
+
+
+
+
+
+#if(1=0)
+  #macro step1(A , B, C, D);
+  #endmacro; 
+  #macro step1_2(A , B); 
+  #endmacro; 
+  #macro step2(A);
+  #endmacro; 
+  #macro TakeSilk2(A);
+  #endmacro; 
+  #macro step6(A);
+  #endmacro; 
+  #macro step7; 
+  #endmacro; 
+  #macro step8(A);
+  #endmacro; 
+  #macro step11_1(A, B);
+  #endmacro; 
+  #macro step11_2_1(A,B);
+  #endmacro; 
+  #macro step11_2_2(A,B); 
+  #endmacro; 
+  #macro step14_1(A);
+  #endmacro; 
+  #macro step14_2(A, B);
+  #endmacro; 
+  #macro step16_1(A);
+  #endmacro; 
+  #macro step16_2(A);
+  #endmacro; 
+  #macro step18(A,B,C,D);
+  #endmacro; 
+  #macro step21(A,B,C,D);
+  #endmacro; 
+  #macro step22(A,B,C,D);  
+  #endmacro; 
+#else
+
+
+#macro step1(A , B, C, D);    
+   movq([ebx+A*2],     mm1);
+   movq([ebx+(A+4)*2], mm2);
+   movq(mm1, mm3);        
+   movq(mm2, mm4);
+   movq([ebx+B*2],     mm5);
+   movq([ebx+(B+4)*2], mm6);
+
+   paddsw(mm5, mm1);
+   paddsw(mm6, mm2);
+   psubsw(mm5, mm3);       
+   psubsw(mm6, mm4);
+                           
+   movq([ebx+C*2],     mm5);   
+   movq([ebx+(C+4)*2], mm6);
+   movq([ebx+D*2],     mm7);
+   movq([ebx+(D+4)*2], mm0);
+                        
+ 
+   //NOW can we store to memory
+   movq(mm1, [ebx+A*2]    );  
+   movq(mm2, [ebx+(A+4)*2]);
+   movq(mm3, [ebx+D*2]    );
+   movq(mm4, [ebx+(D+4)*2]);
+
+   //  and we go on
+   movq(mm5, mm1);      
+   movq(mm6, mm2);
+
+   paddsw(mm7, mm5);
+   paddsw(mm0, mm6);
+   psubsw(mm7, mm1);
+   psubsw(mm0, mm2);
+
+   movq(mm5, [ebx+C*2]    );
+   movq(mm6, [ebx+(C+4)*2]);
+   movq(mm1, [ebx+B*2]    );
+   movq(mm2, [ebx+(B+4)*2]);
+
+#endmacro;
+
+
+
+#macro step1_2(A , B);     //simpler case
+   movq([ebx+A*2],     mm1);
+   movq([ebx+(A+4)*2], mm2);
+   movq(mm1, mm3);           
+   movq(mm2, mm4);
+   movq([ebx+B*2],     mm5);
+   movq([ebx+(B+4)*2], mm6);
+
+   paddsw(mm5, mm1);
+   paddsw(mm6, mm2);
+   psubsw(mm5, mm3);
+   psubsw(mm6, mm4);
+ 
+   movq(mm1, [ebx+A*2]    );    
+   movq(mm2, [ebx+(A+4)*2]);
+   movq(mm3, [ebx+B*2]    );
+   movq(mm4, [ebx+(B+4)*2]);
+#endmacro;
+
+
+
+
+
+//notice that we don't change ebx
+#macro step2(A);
+   movq([ebx+A*2], mm3);          
+   movq(mm3, mm4);
+
+   mov ( (type word [ebx + (A+4)*2]) ,ax);
+   xchg( ax, (type word [ebx + (A+7)*2]));
+   xchg( ax, (type word [ebx + (A+4)*2]));
+   mov ( (type word [ebx + (A+5)*2]) ,ax);
+   xchg( ax, (type word [ebx + (A+6)*2]));
+   xchg( ax, (type word [ebx + (A+5)*2]));
+   
+   movq([ebx+(A+4)*2], mm1);
+
+   paddsw(mm1, mm3);              //now the second operand in mm1(reversed from mm0)
+   psubsw(mm1, mm4);
+   movq(mm3, [ebx+A*2]);          //store to mem
+   movq(mm4, [ebx+(A+4)*2]); 
+#endmacro;
+
+//step3 takes advantage of step1
+//step4 uses this;
+#macro TakeSilk2(A); 
+  
+  mov( (type dword [ebx+A*2]) ,     eax);      //eax:0100
+  mov( (type dword [ebx+(2+A)*2]) , edx);      //edx:0302
+  
+  rol(16, eax);                                //eax:0001
+  mov(eax, ecx);                               //ecx:0001
+                     
+  add(dx, ax);                                 //ax:00|01+02
+  sub(dx, cx);                                 //cx:00|01-02
+                     
+  rol(16,eax);                                 //eax:01+02|00
+  rol(16,ecx);                                 //ecx:01-02|00
+  rol(16,edx);                                 //edx:02|03
+  
+  add(dx,ax);
+  sub(dx,cx);
+ 
+  mov(eax, (type dword [ebx+A*2])    );
+  mov(ecx, (type dword [ebx+(2+A)*2]));
+  
+#endmacro;
+
+
+
+
+#macro step6(A);
+   mov((type word [ebx+A*2]),     ax);
+   mov((type word [ebx+(A+1)*2]), dx);
+   add(dx, (type word [ebx+A*2])    );
+   sub(dx, ax);
+   mov(ax, (type word [ebx+(A+1)*2]));     
+#endmacro;
+
+
+#macro step7;                   //dummy macro for debug cause
+   movq([ebx+40*2],     mm1);
+   movq([ebx+(40+4)*2], mm2);
+
+   movq([ebx+48*2],     mm5);
+   movq([ebx+(48+4)*2], mm6);
+
+   paddsw(mm5, mm1);
+   paddsw(mm6, mm2);
+
+   movq([ebx+32*2],     mm5);   
+   movq([ebx+(32+4)*2], mm6);
+   movq([ebx+40*2],     mm7);
+   movq([ebx+(40+4)*2], mm0);
+                        
+ 
+   //ONLY NOW can westore to memory
+   movq(mm1, [ebx+40*2]    ); 
+   movq(mm2, [ebx+(40+4)*2]);
+
+
+   //  and we go on
+
+   paddsw(mm7, mm5);
+   paddsw(mm0, mm6);
+
+   //hold once more
+
+   movq([ebx+48*2],     mm1);   
+   movq([ebx+(48+4)*2], mm2);
+   movq([ebx+56*2],     mm3);
+   movq([ebx+(56+4)*2], mm4);
+
+   //  also we go on
+
+   paddsw(mm3, mm1);
+   paddsw(mm4, mm2);
+   pxor(mm3,   mm3);
+   pxor(mm4,   mm4);
+   psubsw(mm1, mm3);
+   psubsw(mm2, mm4);
+                           
+                           
+   //finally we store it                          
+   movq(mm5, [ebx+48*2]    );
+   movq(mm6, [ebx+(48+4)*2]);
+ 
+                          
+   movq(mm3, [ebx+56*2]    );
+   movq(mm4, [ebx+(56+4)*2]);
+
+
+   //still two rows need to swap, we simply use movq here
+   movq([ebx+16*2],     mm1); 
+   movq([ebx+(16+4)*2], mm2);
+   movq([ebx+24*2],     mm3);
+   movq([ebx+(24+4)*2], mm4);
+          
+   movq(mm1, [ebx+24*2]    );
+   movq(mm2, [ebx+(24+4)*2]);
+   movq(mm3, [ebx+16*2]    );
+   movq(mm4, [ebx+(16+4)*2]);
+#endmacro;
+
+
+#macro step8(A);
+  mov( (type word [ebx+(A+7)*2] ), dx );
+  neg(dx);
+  sub( (type word [ebx+(A+6)*2] ), dx);
+  mov( dx, (type word [ebx+(A+7)*2] ));
+
+  mov( (type word [ebx+(A+5)*2] ), dx );
+  mov( (type word [ebx+(A+6)*2] ), ax );
+  add( ax, (type word [ebx+(A+5)*2] ) ); 
+  add( (type word [ebx+(A+4)*2] ), dx );
+  mov(dx,  (type word [ebx+(A+6)*2] ) );
+#endmacro;
+
+
+#macro step11_1(A, B);
+    mov( (type word [ebx+A]), ax);
+    mov( (type word [ebx+B]), dx);
+    add( dx, (type word [ebx+A]));
+    sub( dx, ax);
+    mov( ax, (type word [ebx+B]));
+#endmacro;
+
+
+#macro step11_2_1(A,B);          
+  mov( (type dword [ebx+A*2]), eax);//  eax  23.22
+  mov ((type dword [ebx+B*2]), edx);//  edx  33.32
+
+  rol(16,  eax);                    //  eax  22.23
+  mov(edx, ecx);                    //  ecx  33.32
+  add (ax, dx);                     //  edx  33.32+23
+  sub(ax, cx );                     //  ecx  33.32-23
+  mov(dx, (type word [ebx+(A)*2]));//32+23 -> A,    
+  rol(16, edx);                     //edx, 32+23.33   
+  rol(16, ecx);                     //ecx, 32-23.33
+  rol(16, eax);                     //eax, 23.22
+  
+  add(ax, cx);                      //ecx, 32-23.33+22
+
+  sub( dx,ax);                      //eax, 23.22-33
+  mov(ax, (type word [ebx+(A+1)*2]));    //22-33 -> A+1   
+
+  mov(ecx, eax);                       //eax, 32-23.33+22
+
+  rol(16, ecx);                        //ecx, 33+22.32-23
+  
+  mov(ecx, edx);                       //edx, 33+22,32-23
+  add(ax, cx);                         //ecx, 33+22.32-23+33+22
+  mov(cx, (type word [ebx+(B)*2]));  //
+  sub(ax, dx);
+  mov (dx, (type word [ebx+(B+1)*2]));
+#endmacro;
+
+#macro step11_2_2(A,B);                                             
+  mov( (type dword [ebx+A*2]), eax);//eax  27.26
+  mov ((type dword [ebx+B*2]), edx);//edx  37.36
+  rol(16, edx);                     //edx  36.37
+
+  mov(edx, ecx);                    //ecx  36.37
+  
+  sub(ax, cx);                      //ecx, 36.37-26
+  
+  add(dx, ax);                      //eax  27.26+37
+  
+  mov(ax, (type word [ebx+(A+1)*2])); //26+37 -> A+1
+  
+  rol(16, eax);                     //eax, 26+37.27
+  rol(16, ecx);                     //ecx, 37-26.36
+  
+  mov (eax, edx);                   //edx, 26+37.27
+  sub(cx, dx);                      //edx, 26+37.27-36
+  
+  mov(dx, (type word [ebx+(A)*2]));    //27-36 -> A
+  add(cx,ax);                         //eax, 26+37.27+36
+  
+  
+  rol(16, ecx);                    //ecx, 36.37-26
+  mov(ecx, edx);                   //edx, 36.37-26
+  
+  add(ax,dx);                      //edx, 36.37-26+27+36
+  sub(ax,cx);                      //ecx, 36.37-26-(27+36)
+   
+  mov(dx, (type word [ebx+(B+1)*2]));
+  mov (cx, (type word [ebx+(B)*2]));
+   
+#endmacro;
+
+
+#macro step14_1(A);     
+   movq([ebx+A*2], mm1);
+   movq (mm1, mm2);
+   pmulhw (mm0, mm1);   //mm0 has been prepared  
+   pmullw (mm0, mm2);
+   movq(mm2, mm3);
+
+   punpckhwd(mm1, mm2);
+   punpcklwd(mm1, mm3);
+
+   psrad(14, mm2);     //we ever multiply by 2^14
+   psrad(14, mm3);
+
+   packssdw(mm2, mm3); //note the order
+   movq(mm3,[ebx+A*2]);
+   
+#endmacro;
+
+
+   
+   
+#macro step14_2(A, B);
+   movq ([ebx+A*2], mm1);  //mm1:    16|12|06|02   
+   movq ([ebx+B*2], mm2);  //mm2:    17 13 07 03
+ 
+   movq(mm2, mm7);
+   paddsw (mm1, mm7);  //mm7 now contains the sum (Sigma)
+
+   //(2)
+   movq(mm7, mm3);    
+   movq(mm7, mm5);
+   punpckhwd(mm1, mm3);         //mm3:   16E12E
+   punpcklwd(mm1, mm5);           //     06E02E
+
+   pmaddwd(mm0, mm3);           //mm0: sub|r2|sub|r2
+   pmaddwd(mm0, mm5);          //mm5:  06*sub+r2*E|02*sub+r2*E
+                               //mm3:  16*sub+r2*E|12*sub+r2*E
+   psrad(14, mm3);
+   psrad(14, mm5);
+   packssdw(mm3, mm5); //
+   movq(mm5, [ebx+A*2]);
+
+   //(3) continues
+   movq(mm7, mm4);
+   punpckhwd(mm2, mm4);
+   punpcklwd(mm2, mm7);
+
+   pmaddwd(mm6, mm4);
+   pmaddwd(mm6, mm7);
+
+   psrad(14, mm4 );
+   psrad(14, mm7);
+   packssdw(mm4, mm7);
+   movq(mm7, [ebx+B*2]);
+#endmacro;   /////////////   CORE   //////////////
+
+
+#macro step16_1(A);
+   mov( [ebx+A*2], ax);
+   sar(1,ax);                         
+   mov( ax,  [ebx+A*2]);
+#endmacro;
+
+#macro step16_2(A);
+   mov( [ebx+A*2], ax);
+   sar(1,ax);                         
+   neg(ax);
+   mov( ax, [ebx+A*2]);
+#endmacro;
+
+
+#macro step18(A,B,C,D);
+    //use si temporarily, _bx_ conflicts.
+    mov( [ebx+A*2], ax);  //14 like
+    mov( [ebx+B*2], si);  //15
+    mov( [ebx+C*2], cx);  //16
+    mov( [ebx+D*2], dx);  //17
+
+    add(si, dx);
+    mov(dx,  [ebx+A*2]);  
+    shl(1, si);           
+    sub(dx, si);
+    mov(si,  [ebx+D*2]);
+
+    add(cx, ax);
+    mov(ax,  [ebx+B*2]);
+    shl(1, cx);
+    sub(ax, cx);
+    mov(cx,  [ebx+C*2]);
+#endmacro;
+
+
+#macro step21(A,B,C,D);
+  movq([ebx+A*2], mm1); //40~43
+  movq([ebx+B*2], mm2); //50
+  movq([ebx+C*2], mm3); //60
+  movq([ebx+D*2], mm4); //70
+
+  movq(mm1, mm5);       //mm5:40~
+
+  paddsw(mm2, mm1);     //mm1:40+50
+
+  psubsw(mm2, mm5);     //mm5:40-50
+
+  movq(mm1, mm0); 
+
+  psubsw(mm4 , mm1);
+  movq(mm1, [ebx+A*2]);
+  paddsw(mm4, mm0);
+  movq(mm0, [ebx+D*2]);
+
+  movq(mm5, mm7);
+  paddsw(mm3, mm5);
+  movq(mm5, [ebx+B*2]);
+  psubsw(mm3, mm7);
+  movq(mm7, [ebx+C*2]);
+#endmacro;
+
+
+#macro step22(A,B,C,D);  					//quick hack of the 'step21' macro
+  mov( (type word [ebx+A*2]), ax); //40~43
+  mov(  (type word [ebx+B*2]),cx); //50
+  mov( (type word [ebx+C*2]),dx);  //60
+  mov( (type word [ebx+D*2]),si);  //70
+
+     
+  mov(ax, di);       //di: 40
+  add(cx, ax);       //ax: 40+50
+  sub(cx, di);       //di: 40-50
+  mov(di, cx);
+
+  mov(ax, di);       
+
+  sub(si , ax);
+  mov(ax, [ebx+A*2]);
+  add(si, di);
+  mov(di, [ebx+D*2]);
+
+  mov(cx, ax);
+  add(dx, cx);
+  mov(cx, [ebx+B*2]);
+  sub(dx, ax);
+  mov(ax, [ebx+C*2]);
+#endmacro;
+
+#endif
+
+
+
+
+static 
+Arr : int16[64] := [  
+
+
+                      140,144,147,140,140,155,179,175,
+                      144,152,140,147,140,148,167,179,
+                      152,155,136,167,163,162,152,172,
+                      168,145,156,160,152,155,136,160,
+                      162,148,156,148,140,136,147,162,
+                      147,167,140,155,155,140,136,162,
+                      136,156,123,167,162,144,140,147,
+                      148,155,136,155,152,147,147,136
+                  ]; 
+              
+              
+              
+
+ArrBK: int16[64] := 64 dup [0]; 
+
+
+
+
+Index2 : int16[64] := [   
+
+  0,   5,   8,  12,  16,  21,  24,  28, 
+  4,   1,  13,   9,  20,  17,  29,  25, 
+ 10,  15,   2,   3,  26,  31,  18,  19, 
+ 14,  11,   6,   7,  30,  27,  22,  23, 
+ 32,  37,  40,  44,  48,  53,  56,  60, 
+ 36,  33,  45,  41,  52,  49,  61,  57, 
+ 42,  47,  34,  35,  58,  63,  50,  51, 
+ 46,  43,  38,  39,  62,  59,  54,  55           
+
+];
+ 
+
+
+IndexAB : int16[64] := 
+ [0,   9,  19,  18,   8,   1,  27,  26, 
+  3,  11,  16,  17,   2,  10,  24,  25, 
+  4,  13,  22,  23,  12,   5,  30,  31, 
+  6,  14,  20,  21,   7,  15,  28,  29, 
+ 32,  41,  51,  50,  40,  33,  59,  58, 
+ 35,  43,  48,  49,  34,  42,  56,  57, 
+ 36,  45,  54,  55,  44,  37,  62,  63, 
+ 38,  46,  52,  53,  39,  47,  60,  61];
+
+
+Index9 : int16[64] := [     0, 16, 32, 48,
+                            1, 17, 33, 49,         
+                            2, 18, 34, 50,
+                            3, 19, 35, 51,         
+                            4, 20, 36, 52,
+                            5, 21, 37, 53,         
+                            6, 22, 38, 54, 
+                            7, 23, 39, 55,         
+                            8, 24, 40, 56, 
+                            9, 25, 41, 57,         
+                            10,26, 42, 58, 
+                            11,27, 43, 59,         
+                            12,28, 44, 60, 
+                            13,29, 45, 61,         
+                            14,30, 46, 62,
+                            15,31, 47, 63         
+                       ]; 
+
+
+r4Arr : int16[4] := 4 dup[11585];              //r4 = 0.7071067812 * 16384
+sub_r2Arr : int16[4] := [15137,0, 15137,0];    //sub = -0.541196100*16384; r2 = 0.923879532511*16384
+add_r2Arr: int16[4] := [0,21407, 0, 21407];    //add = 1.30656296487*16384; -r2 for subtraction
+//what is strange, the initializer cannot be large, so some of the initialization we leave later.
+
+
+
+const
+    SIZE: int8 := 8;
+
+//util
+procedure printArr;@nodisplay;  
+
+var
+  i:int32;
+
+begin printArr;
+
+// save the registers used
+push(eax);
+push(ebx);  
+push(edx); 
+
+for(mov(0, i); (i<64); add(1, i)) do
+  mov ( i, eax);
+  shl(1,eax);
+  mov( [ebx+eax], dx);                      //print the array based at _ebx_
+  stdout.puti16Size(dx, 5,' ');
+  stdout.put(",");
+ 
+  mov((type word i), ax); 
+  imod(SIZE, ax);
+  cmp(ah, 7);
+  jnz CONT;
+  stdout.put(nl);
+ CONT:
+endfor;
+
+pop(edx);
+pop(ebx);
+pop(eax);
+
+  stdout.newln();
+  stdout.newln();
+
+end printArr;
+ 
+
+
+
+begin FastDct;
+    //push registers
+    pusha();
+
+
+
+   //now, out program begins
+
+   lea( ebx, Arr );
+   
+   call printArr;
+
+/*************************
+*  step 1:
+**************************/
+
+   //(re)initialize register used
+   //lea(Arr, ebx);
+
+   step1(0, 56, 24,  32);
+   step1(8, 48, 16, 40);
+
+   stdout.put("step 1 output: ", nl);   call printArr;
+
+/*************************
+*  step 2:
+**************************/
+   //notice that we don't change ebx
+   step2(0);
+   step2(8);
+   step2(16);
+   step2(24);
+   step2(32);
+   step2(40);
+   step2(48);
+   step2(56);
+
+   stdout.put("step 2 output: ", nl);   call printArr;
+   
+/*************************
+*  step 3:
+**************************/
+
+   //we take advantage of step1's processing
+
+   step1(0, 24, 8, 16);
+
+   stdout.put("step 3 output: ", nl);   call printArr;
+   
+/*************************
+*  step 4:              
+**************************/
+
+   TakeSilk2(0); 
+   TakeSilk2(8); 
+   TakeSilk2(16);
+   TakeSilk2(24);
+   TakeSilk2(32);
+   TakeSilk2(40);
+   TakeSilk2(48);
+   TakeSilk2(56);
+
+   stdout.put("step 4 output: ", nl);   call printArr;
+
+
+/*************************
+*  step 5:
+**************************/
+
+
+   step1_2(0, 8);
+
+   stdout.put("step 5 output: ", nl);call printArr;
+
+/*************************
+*  step 6:
+**************************/
+
+   step6(0);  
+   step6(8);
+   step6(16);  
+   step6(24);
+   step6(32);  
+   step6(40);
+   step6(48);  
+   step6(56);
+
+ 
+   stdout.put("step 6 output: ", nl);call printArr;
+  
+/*************************
+*  step 7:
+**************************/
+   
+   step7;
+   stdout.put("step 7 output: ", nl);call printArr;
+
+/*************************
+*  step 8:
+**************************/
+   
+
+   /* **  asm  **  */
+
+    step8(0);
+    step8(8);
+    step8(16);
+    step8(24);
+    step8(32);
+    step8(40);
+    step8(48);
+    step8(56);                          
+
+                                        
+
+    //STILL TWO COLUMN ORDER NEED TO BE EXCHANGED
+    stdout.put("step 8(part) output: ", nl);call printArr;
+
+/******************************************************************
+*  - step 8(left) - step 9 - step10 - step11 - step12 - step13
+*******************************************************************/
+
+    //first we come through to step11 which has some add-sub operations
+    step11_1((0+11)*2, (0+10)*2);  //
+    step11_1((0+17)*2, (0+25)*2);
+    step11_1((0+14)*2, (0+15)*2);
+    step11_1((0+21)*2, (0+29)*2);
+    step11_1((0+43)*2, (0+42)*2);
+    step11_1((0+49)*2, (0+57)*2);
+    step11_1((0+46)*2, (0+47)*2);
+    step11_1((0+53)*2, (0+61)*2);  //40 instructions - 16 +/- operations, is it worth?
+
+    step11_2_1(18,26);             
+    step11_2_1(50,58);
+    step11_2_2(22,30);
+    step11_2_2(54,62);
+    
+     
+    stdout.put("This is just before K4I4 preparation",nl);
+    stdout.put("just before deuse Arr, show it:", nl);  call printArr;
+
+    lea(ArrBK, ebx); stdout.put("now show ArrBK:", nl);  call printArr;
+
+
+    //prepare to multiplication -- which is core
+ 
+    xor(eax, eax);
+    for(mov(0, ecx); (ecx<64); inc(ecx)) do
+    
+         shl(1, ecx);
+         mov((type int16 IndexAB[ecx]), ax);                  //Array[x] -x is in byte unit.
+         shl(1, eax);
+         mov( Arr[eax] , dx);
+         mov( dx, ArrBK[ecx]);
+         shr(1, ecx);
+         
+    endfor;           
+    stdout.put("ArrBK now assigned:", nl);
+    stdout.put("After indexes we move to ArrBK: road to K4I4",nl); lea(ArrBK,ebx); call printArr;  
+        							// A->B->Z           A[indexAB[i]]=B[i]=Z[index9[i]]
+  
+   
+/*************************
+*  step 14: core
+**************************/
+   
+   push (ebx);
+   lea(r4Arr, ebx);
+   movq([ebx], mm0);      //for (1)
+
+   lea(sub_r2Arr, ebx);   // for (2) and (3)
+   mov(-8867, (type word [ebx+1*2]));
+   mov(-8867, (type word [ebx+3*2]));
+
+   lea(add_r2Arr, ebx);   // for (2) and (3)
+   mov(-15137, (type word [ebx]));
+   mov(-15137, (type word [ebx+2*2]));
+   pop(ebx);
+
+
+   //(1) r4 multiplication
+
+   step14_1(4);
+   step14_1(20);
+   step14_1(36);
+   step14_1(52);
+   stdout.put("step 14(1) output: ", nl);   call printArr;     
+
+   // (2) and (3)
+   push(ebx) ;
+   lea(sub_r2Arr, ebx); 
+   movq([ebx], mm0);
+   lea(add_r2Arr, ebx);
+   movq([ebx], mm6);
+   pop(ebx);
+
+///////////////////////////////////
+   step14_2(8, 12);
+   step14_2(24, 28);   
+   step14_2(40, 44);
+   step14_2(56, 60);
+///////////////////////////////////   
+
+   stdout.put("step 14(123) output: ", nl);   call printArr;     
+
+
+    stdout.put("K4I4 end>>>>>>>>>>>>>>>>>>>>>>>>>>>",nl); call printArr;  
+    
+    
+    
+    
+
+/***********************************
+*  step 15 - step 16 - step17
+***********************************/
+
+/*
+00
+|
+07
+10
+14
+11*
+15*
+12
+16
+13*
+17*
+*/
+
+   step16_1(1);    
+   step16_1(2);      
+   step16_1(3);   
+   step16_1(6);    
+   step16_1(7);      
+   
+   step16_1(17);   
+   step16_1(18);    
+   step16_1(19);      
+   step16_1(22);   
+   step16_1(23);    
+   
+   step16_1(33);    
+   step16_1(34);      
+   step16_1(35);
+   step16_1(38);    
+   step16_1(39);
+         
+   step16_1(49);    
+   step16_1(50);      
+   step16_1(51);
+   step16_1(54);    
+   step16_1(55);      
+
+      
+   step16_2(9);   
+   step16_2(11);   
+   step16_2(13);   
+   step16_2(15);
+   
+   step16_2(25);   
+   step16_2(27);   
+   step16_2(29);   
+   step16_2(31);
+   
+   step16_2(41);   
+   step16_2(43);   
+   step16_2(45);   
+   step16_2(47);
+   
+   step16_2(57);   
+   step16_2(59);   
+   step16_2(61);   
+   step16_2(63);
+
+   
+
+  stdout.put("step 15-16-17 output: ", nl); call printArr;
+
+
+/***********************************
+*  step 18
+***********************************/
+
+
+   step18( 2, 3,  6, 7);
+   step18( 18, 19,  22, 23);
+   step18(34, 35, 38, 39);
+   step18(50, 51, 54, 55);
+
+  
+   stdout.put("step 18 output: ", nl);call printArr;
+
+/***********************************
+*  step 19 - step 20
+***********************************/
+
+
+
+
+
+    stdout.put("coming to step 19-20 reverse scan: ", nl);
+    xor(eax, eax);
+    for(mov(0, ecx); (ecx<64); inc(ecx)) do
+         shl(1, ecx);
+         mov((type int16 Index2[ecx]), ax);  //Array[x] -x is in byte unit.
+         shl(1, eax);
+         mov( ArrBK[eax] , dx);  
+         mov( dx, Arr[ecx]);
+         shr(1, ecx);
+  
+    endfor;             
+    
+   ////////////////////////////////////////////////////////
+   lea(Arr, ebx);
+   ////////////////////////////////////////////////////////
+  stdout.put("step 19-20 output: ", nl); call printArr;
+
+/***********************************
+*  step 21
+***********************************/
+   step21(32,40,48,56);
+   step21(36,44,52,60);
+
+   stdout.put("step 21 output: ", nl);call printArr;
+/***********************************
+*  step 22
+***********************************/
+   step22( 4,  5,  6,  7);
+   step22(12, 13, 14, 15);
+   step22(20, 21, 22,23 );
+   step22(28, 29, 30, 31);
+   step22(36, 37, 38,39 );
+   step22(44, 45, 46, 47);
+   step22(52, 53, 54, 55);
+   step22(60, 61, 62, 63);
+
+
+   emms();
+
+
+
+   stdout.put("step 22 END output: ", nl);call printArr;
+
+
+
+
+   // pop registers 
+  popa();
+  
+end FastDct;
+
+
+
+
+

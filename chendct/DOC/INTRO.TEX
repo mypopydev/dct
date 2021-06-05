@@ -1,0 +1,92 @@
+\hrule
+\vskip 1in
+\centerline{\bf 2-D DCT Code Introdution}
+\vskip 6pt
+\centerline{\sl Authored by Xinjian Chen,hand-written by Dan Shu}
+\vskip .5cm
+This is for the 2-d dedution result of the 
+fast dct raised by Xinjian Chen.
+{\bf\sl All} attributes to Xinjian Chen.
+
+
+Since a DCT to a matrix $M$ is 
+$(T_8 \otimes T_8)M$(excluding the part being placed aside in quantization, by means of a coefficient factor each element of matrix)
+, and\footnote\dag{We use $M^l$ to denote the stretched matrix and often don't mention it, as an implication when necessary. And $M^{({1\over4})}$ denotes one quarter of the 64 elements being operated and the left three quarters are the same alike.}
+
+so according to the $T_8$ decomposed result given in the article, we program the permutations to a $8\times8$ matrix $M$ in following steps:\footnote{\dag\dag}{Among them $Un$ is $CR_0$, so it equals to:$\pmatrix{1&0\cr
+                                0&1\cr
+                                &&0&1\cr
+                                &&1&0\cr
+                                &&&&1&0&0&0\cr
+                                &&&&0&1&1&0\cr
+                                &&&&1&1&0&0\cr
+                                &&&&0&0&-1&-1\cr}$}
+
+$$
+\leftline{
+\vbox{
+\hbox{1) $R_3M$}
+\hbox{2) $MR{_3}^t$}
+\hbox{3) $R_2M$}
+\hbox{4) $MR{_2}^t$}
+\hbox{5) $R_1M$}
+\hbox{6) $MR{_1}^t$}
+\hbox{7) $UnM$}
+\hbox{8) $MUn^t$}
+\hbox{9) $P^tM^l$}
+\hbox{10) $Q^tM^{({1\over4})}$}
+\hbox{11) $BM^{({1\over4})}$}
+\hbox{12) $\Lambda^t M^{({1\over4})}$}
+\hbox{13) $Q{_2}^tM^{({1\over4})}$}
+\hbox{14) $(K_4 \otimes I_4)M^{({1\over4})}$}
+\hbox{15) $Q{_2}M^{({1\over4})}$}
+\hbox{16) $SM^{({1\over4})}$}
+\hbox{17) $\Lambda M^{({1\over4})}$}
+\hbox{18) $A M^{({1\over4})}$}
+\hbox{19) $QM^{({1\over4})}$}
+\hbox{20) $PM^l$}
+\hbox{21) $Un_3M$}
+\hbox{22) $MUn{_3}^t$}
+\hbox{23) We leave the quantization apart}
+}
+}
+$$
+
+\vskip 1in
+When we have finished step $22)$, two things are left in step $23)$, one is quantization part, the other is another scan left. As adiscussion of a complete unit test, though in integrated test they are indeed apart from , we describe them here.
+
+To the result matrix $M'$ at step $22)$, \footnote\dag{Above we frequently just use $M$ to denote any of the series of intermediate result matrices we got step by step. Only here we for the first time and also for the last time use an intermediate form as $M'$.}
+$$
+(T_8 \otimes T_8)M = T_8MT{_8}^t$$
+at step $23)$ we need to operate it by:
+$$(P_8 D \otimes P_8 D) M'
+$$
+of which $P_8D$ is $$
+P_8\pmatrix{I_4\cr&P_{(4,3)}\cr}\pmatrix{I_4\cr&M_4\cr}
+$$, we merge the first two together,and will get the result as a scan matrix:
+   $$
+   \pmatrix{1\cr
+            &&&&1\cr
+            &&1\cr
+            &&&&&1\cr
+            &1\cr
+            &&&&&&&1\cr
+            &&&&&&1\cr
+            &&&1\cr}
+   $$
+
+Second, as to Xinjian Chen's paper, there still left a coefficient matrix, as $C_0={1\over2\sqrt2}$, and $C_k(k\ne0)={1\over2}$, this constructs a matrix
+$$
+\pmatrix{
+  {C_{0}C_{0}}&{C_{0}C_{1}}&\ldots&{C_{0}C_{7}}\cr
+  \vdots&\vdots&&\vdots\cr
+  {C_{7}C_{0}}&{C_{7}C_{1}}&\ldots&{C_{7}C_{7}}\cr
+ }
+$$
+and we merge this matrix with the$\pmatrix{I_4\cr&M_4\cr}$
+above to multiply each element of the $8\times8$ matrix by a factor in the resulted matrix hereby. These two operations in the last step of unit test only are done in my c code, in the assembly(HLA) code I only program until step $22)$, since I could see that now the result is identical to that of c code.
+
+\vskip 1in
+\vfill
+%\hrule
+\eject

@@ -1,0 +1,299 @@
+\hrule
+\vskip .5in
+\centerline{\bf 2-D Dedution Result}
+\vskip 6pt
+\centerline{\sl Authored by Xinjian Chen,hand-written by Dan Shu}
+\vskip .5cm
+This is the 2-d dedution result of the 
+fast dct raised by Xinjian Chen.
+{\bf\sl All} attributes to Xinjian Chen.
+
+
+$1^st group$:
+$$
+T_{8} = P_{8} K_{8} R_{8} 
+$$
+
+$$
+P_{8}=\pmatrix{
+1\cr
+&&&&1\cr
+&&1\cr
+&&&&&1\cr
+&1\cr
+&&&&&&&1\cr
+&&&1\cr
+&&&&&&-1\cr}
+$$
+
+$$
+K_{8} = \bordermatrix{&&D&&\cr
+                 &I_{4}\cr
+                 &&P_{(4,3)}M_{4}\cr}
+       \bordermatrix{&&&Un_3&&\cr
+                &I_{4}\cr
+                &&1&1&0&-1\cr
+                &&1&-1&1&0\cr
+                &&1&-1&-1&0\cr
+                &&1&1&0&1\cr}
+        \pmatrix{K_{4}\cr
+                 &K_{4}\cr}
+        \bordermatrix{&&&C&&&\cr
+                 &I_{4}\cr
+                 &&0&0&0&1\cr
+                 &&1&0&1&0\cr
+                 &&0&0&1&1\cr
+                 &&-1&1&0&0\cr}
+$$
+within which,
+$P_{(4,3)}=\pmatrix{1\cr
+                    &1\cr
+                    &&&-1\cr
+                    &&1&\cr}$
+, 
+$M_{4}=\pmatrix{1/2r(1)\cr
+                &1/2r(3)\cr
+                &&1/2r(5)\cr
+                &&&1/2r(7)\cr}$
+
+$$
+R_{8}=\bordermatrix{&&&&R_0&&&\cr
+               &1&0\cr
+               &0&1\cr
+               &&&0&1\cr
+               &&&1&0\cr
+               &&&&&0&0&1&0\cr
+               &&&&&0&0&0&-1\cr
+               &&&&&0&1&0&0\cr
+               &&&&&1&0&0&0\cr}R_1 R_2 R_3 $$
+$$
+    =  \pmatrix{1&0\cr
+               0&1\cr
+               &&0&1\cr
+               &&1&0\cr
+               &&&&0&0&1&0\cr
+               &&&&0&0&0&-1\cr
+               &&&&0&1&0&0\cr
+               &&&&1&0&0&0\cr}
+     \pmatrix{1&1\cr
+              1&-1\cr
+              &&1\cr
+              &&&1\cr
+              &&&&1\cr
+              &&&&&1\cr
+              &&&&&&1\cr
+              &&&&&&&1\cr}
+     \pmatrix{1&0&0&1\cr
+              0&1&1&0\cr
+              1&0&0&-1\cr
+              0&1&-1&0\cr
+              &&&&1\cr
+              &&&&&1\cr
+              &&&&&&1\cr
+              &&&&&&&1\cr}$$
+$
+\pmatrix{
+              1&&&&&&&1\cr
+              &1&&&&&1&\cr
+              &&1&&&1&&\cr
+              &&&1&1&&&\cr
+              1&&&&&&&-1\cr
+              &1&&&&&-1&\cr
+              &&1&&&-1&&\cr
+              &&&1&-1&&&\cr
+             }$
+\vskip .5cm
+\leftline{$2^nd$ group:}
+$$
+\pmatrix{K_4\cr
+         &K_4\cr}
+  \otimes \pmatrix{K_4\cr
+                  &K_4\cr}
+=P \pmatrix{K_4 \otimes K_4 \cr
+            &K_4 \otimes K_4 \cr
+            &&K_4 \otimes K_4 \cr
+            &&&K_4 \otimes K_4 \cr}P^t $$
+and
+$$
+P = \pmatrix{
+             \pmatrix{I_{16}\cr
+                      & P_1 \pmatrix{P_2\cr
+                                   &P_2\cr}
+                     }P_3\cr
+              & \pmatrix{I_{16}\cr
+                      & P_1 \pmatrix{P_2\cr
+                                   &P_2\cr}
+                      }P_3\cr
+             }
+$$
+
+within which,
+$$
+P_1 = \pmatrix{
+              1\cr
+              &&1\cr
+              &&&&1\cr
+              &&&&&1\cr
+              &&&&&&&&1\cr
+              &&&&&&&&&&1\cr
+              &&&&&&&&&&&&1\cr
+              &&&&&&&&&&&&&1\cr
+              &1\cr
+              &&&1\cr
+              &&&&&&1\cr
+              &&&&&&&1\cr
+              &&&&&&&&&1\cr
+              &&&&&&&&&&&1\cr
+              &&&&&&&&&&&&&&1\cr
+              &&&&&&&&&&&&&&&1\cr}
+$$
+
+$$
+P_2 = \pmatrix{
+         1\cr
+         &&&&1\cr
+         &1\cr
+         &&&&&1\cr
+         &&1\cr
+         &&&1\cr
+         &&&&&&1\cr
+         &&&&&&&1\cr}
+,
+P_3 = \pmatrix{
+         I_4\cr
+         &&&&I_4\cr
+         &I_4\cr
+         &&&&&I_4\cr
+         &&I_4\cr
+         &&&I_4\cr
+         &&&&&&I_4\cr
+         &&&&&&&I_4\cr}
+$$
+
+
+$3^rd$ group:
+$$
+K_4 \otimes K_4 = QA\Lambda SQ_2 (K_4 \otimes I_4)	Q{_2}^t \Lambda^t B Q^t
+$$
+
+
+$$
+Q = \pmatrix{
+    \cr
+    &I_8\cr
+    \cr
+    &&&&1\cr
+    &&&&&&1\cr
+    &&&&&&&&1\cr
+    &&&&&&&&&1\cr
+    &&&&&1\cr
+    &&&&&&&1\cr
+    &&&&&&&&&&1\cr
+    &&&&&&&&&&&1\cr}
+$$
+
+$$
+A = \pmatrix{
+    1\cr
+    &1\cr
+    &&1\cr
+    &&&1\cr
+    &&&&1\cr
+    &&&&&1\cr
+    &&&&&&0&1\cr
+    &&&&&&1&0\cr
+    &&&&&&&&1\cr
+    &&&&&&&&&1\cr
+    &&&&&&&&&&0&1\cr
+    &&&&&&&&&&1&0\cr
+    &&&&&&&&&&&&0&1&0&1\cr
+    &&&&&&&&&&&&1&0&1&0\cr
+    &&&&&&&&&&&&-1&0&1&0\cr
+    &&&&&&&&&&&&0&1&0&-1\cr
+    }
+$$
+
+$$
+\Lambda = \pmatrix{
+            1\cr
+            &&&&&1\cr
+            &&&&&&&&1\cr
+            &&&&&&&&&1\cr
+            &&&&1\cr
+            &1\cr
+            &&&&&&&&&&1\cr
+            &&&&&&&&&&&1\cr
+            &&&&&&&&&&&&1\cr
+            &&&&&&&&&&&&&1\cr
+            &&&&&&&&&&&&&&1\cr
+            &&&&&&&&&&&&&&&1\cr
+            &&1\cr
+            &&&1\cr
+            &&&&&&1\cr
+            &&&&&&&1\cr
+          }
+$$
+
+\vskip 1in
+
+
+$$
+S = \pmatrix{
+     1\cr
+     &1\over2\cr
+     &&1\over2\cr
+     &&&1\over2\cr
+     &&&&1\cr
+     &&&&&1\cr
+     &&&&&&1\over2\cr
+     &&&&&&&1\over2\cr
+     &&&&&&&&1\cr
+     &&&&&&&&&1\cr
+     &&&&&&&&&&-{1\over2}\cr
+     &&&&&&&&&&&-{1\over2}\cr
+     &&&&&&&&&&&&1\cr
+     &&&&&&&&&&&&&1\cr
+     &&&&&&&&&&&&&&-{1\over2}\cr
+     &&&&&&&&&&&&&&&-{1\over2}\cr}
+$$
+
+$$
+Q_2 = \pmatrix{
+    \cr
+    &I_8\cr
+    \cr
+    &&&&1\cr
+    &&&&&&&&1\cr
+    &&&&&1\cr
+    &&&&&&&&&1\cr
+    &&&&&&1\cr
+    &&&&&&&&&&1\cr
+    &&&&&&&1\cr
+    &&&&&&&&&&&1\cr}
+$$
+
+
+$$
+B = \pmatrix{
+    1\cr
+    &1\cr
+    &&1\cr
+    &&&1\cr
+    &&&&1\cr
+    &&&&&1\cr
+    &&&&&&1&1\cr
+    &&&&&&1&-1\cr
+    &&&&&&&&1\cr
+    &&&&&&&&&1\cr
+    &&&&&&&&&&1&1\cr
+    &&&&&&&&&&1&-1\cr
+    &&&&&&&&&&&&0&1&-1&0\cr
+    &&&&&&&&&&&&1&0&0&1\cr
+    &&&&&&&&&&&&-1&-1&-1&1\cr
+    &&&&&&&&&&&&-1&1&1&1\cr
+    }
+$$
+\vskip 1in
+\vfill
+\hrule
+\eject
